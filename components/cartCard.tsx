@@ -1,6 +1,7 @@
 import { Minus, Plus, Trash } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import type { Product, ProductImageVariants } from "../types/ProductType";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
     product: Product;
@@ -8,6 +9,7 @@ interface ProductCardProps {
 
 export default function CartCard({ product }: ProductCardProps) {
     const { cartItems, removeFromCart, updateQuantity } = useCart();
+    const navigate = useNavigate();
 
     const cartItem = cartItems.find((item) => item.product.id === product.id);
     const quantity = cartItem?.quantity || 0;
@@ -41,6 +43,10 @@ export default function CartCard({ product }: ProductCardProps) {
 
     const imageMap = product.itemImages[0];
     const displayImage = getFirstImage(imageMap);
+
+    const handleCardClick = () => {
+        navigate(`/product/${product.id}`, { state: { product } });
+    };
 
     return (
         <div className="border-b-2  flex max-md:flex-col gap-6 border-gray-100 p-4 relative">
@@ -97,7 +103,7 @@ export default function CartCard({ product }: ProductCardProps) {
                     <Trash />
                 </button>
 
-                <button className="rounded-xl bg-black/90 text-white py-3 md:w-[50%]">
+                <button onClick={handleCardClick} className="rounded-xl bg-black/90 text-center text-white py-3 md:w-[50%]">
                     View item
                 </button>
             </div>

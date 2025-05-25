@@ -239,7 +239,7 @@ export default function ProductDetails() {
             </div>
 
             {/* Product Info Section */}
-            <div className="flex flex-col max-md:gap-10 flex-1 md:justify-between">
+            <div className="flex flex-col max-md:gap-10 gap-8 flex-1 md:justify-between">
                 <div>
                     <h2 className="md:text-2xl font-semibold text-xl">{product.name}</h2>
                     <p className="text-gray-500 italic line-clamp-2">{product.description}</p>
