@@ -1,5 +1,5 @@
 // import React from "react";
-import { Routes, Route, HashRouter } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import CartButton from "../components/cartButton";
 import { CartProvider } from "../context/CartContext";
@@ -12,17 +12,15 @@ import CartPage from "./pages/Cart";
 function App() {
   return (
     <>
-      <HashRouter>
-        <CartProvider>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-          </Routes>
-          <CartButton />
-          <ToastContainer position="top-right" />
-        </CartProvider>
-      </HashRouter>
+      <CartProvider>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+        </Routes>
+        <CartButton />
+         <ToastContainer position="top-right" />
+      </CartProvider>
     </>
 
   );
