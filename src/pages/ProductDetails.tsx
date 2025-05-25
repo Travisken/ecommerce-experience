@@ -131,9 +131,20 @@ export default function ProductDetails() {
             toast.error("Please select a size before adding to cart.");
             return;
         }
+        if (!selectedColor) {
+            toast.error("Please select a color before adding to cart.");
+            return;
+        }
+
+        // Create updated product with selected size and color
+        const updatedProduct: Product = {
+            ...product,
+            selectedSize,
+            selectedColor,
+        };
 
         toast.success(`Added to cart: ${product.name}, Color: ${selectedColor}, Size: ${selectedSize}`);
-        addToCart(product);
+        addToCart(updatedProduct);
     };
 
     // Wishlist toggle
@@ -240,7 +251,7 @@ export default function ProductDetails() {
                 </div>
 
                 <div>
-                    <h1 className="text-2xl font-bold">{product.price}</h1>
+                    <h1 className="text-2xl font-bold">${product.price}</h1>
                     {product.discount !== 0 && (
                         <p className="text-green-500 font-semibold text-sm">{product.discount}% off</p>
                     )}

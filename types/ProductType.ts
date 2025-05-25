@@ -11,13 +11,15 @@ export type Product = {
   name: string;
   description: string;
   category: string;
-  price: string;
+  price: number;
   rating: number;
   discount: number;
   sales: number;
   review: [];
   itemImages: ProductImageVariants[];
   sizes: string[];
+  selectedSize?: string;
+  selectedColor?: keyof ProductImageVariants;
 };
 
 export type CartItem = {

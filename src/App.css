@@ -11,3 +11,37 @@
 .bounce {
   animation: bounce 0.5s ease-in-out;
 }
+
+@keyframes slide-up {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+/* Override fixed position on desktop */
+@media (min-width: 768px) {
+  .fixed.bottom-0.md\\:static {
+    position: static !important;
+    bottom: auto !important;
+  }
+}
