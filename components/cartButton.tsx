@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext"; // Adjust the path as needed
 import { useEffect, useState } from "react";

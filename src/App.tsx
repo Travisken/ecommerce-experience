@@ -7,6 +7,7 @@ import ProductDetails from "./pages/ProductDetails";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CartPage from "./pages/Cart";
+// import CartPage from "./pages/cart";
 // import CartPage from "./pages/Cart";
 
 function App() {

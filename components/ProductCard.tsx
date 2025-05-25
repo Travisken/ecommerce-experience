@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import { useState } from "react";
 import { ShoppingCart, Plus, Minus, X } from "lucide-react";
