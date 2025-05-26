@@ -33,16 +33,32 @@ export default function CartCard({ product }: ProductCardProps) {
             : product.price;
 
 
-    function getFirstImage(images: ProductImageVariants): string {
+
+
+
+    function getImageBySelectedColor(
+        images: ProductImageVariants,
+        selectedColor?: keyof ProductImageVariants
+    ): string {
+        if (selectedColor && images[selectedColor] && images[selectedColor][0]) {
+            return images[selectedColor][0];
+        }
+
+        // Fallback to first available image
         for (const color of Object.keys(images) as Array<keyof ProductImageVariants>) {
             if (images[color] && images[color][0]) return images[color][0];
         }
+
         return "/placeholder.jpg";
     }
 
 
+
     const imageMap = product.itemImages[0];
-    const displayImage = getFirstImage(imageMap);
+    const selectedColorKey = product.selectedColor || undefined;
+    const displayImage = getImageBySelectedColor(imageMap, selectedColorKey);
+
+
 
     const handleCardClick = () => {
         navigate(`/product/${product.id}`, { state: { product } });

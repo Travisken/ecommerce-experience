@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useLocation, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Product, ProductImageVariants } from "../../types/ProductType";
 import StarRating from "../../components/starRating";
 import { Heart, Minus, Plus, Search, Share, ShoppingCart } from "lucide-react";
@@ -12,205 +13,181 @@ export default function ProductDetails() {
     const { id } = useParams();
     const { state } = useLocation();
     const [product, setProduct] = useState<Product | undefined>(state?.product);
-
-
-
-    useEffect(() => {
-    if (!product && id) {
-      // Try getting product from local array
-      const found = Products.find((p) => p.id === Number(id));
-
-      if (found) {
-        setProduct(found);
-      } else {
-        // Fallback: try loading from localStorage (if stored previously)
-        const savedProducts = localStorage.getItem("products");
-        if (savedProducts) {
-          const parsed = JSON.parse(savedProducts);
-          const foundInStorage = parsed.find((p: Product) => p.id === Number(id));
-
-          setProduct(foundInStorage);
-        }
-      }
-    }
-  }, [id, product]);
-
-
-    // Show fallback if no product found
-    if (!product) {
-        return <p>Product not found. Try reloading from the product list.</p>;
-    }
-
-    // Extract color keys from first image object, fallback to empty array
-    const colors = Object.keys(product.itemImages?.[0] || {}) as (keyof ProductImageVariants)[];
-
-    // Determine the first available color with images
-    const firstColor =
-        colors.length > 0 && colors[0] in product.itemImages[0] ? colors[0] : "";
-
-    // Check if product has valid images for given color
-    const hasImages = (color: keyof ProductImageVariants) => {
-        if (!product.itemImages || !Array.isArray(product.itemImages)) return false;
-
-        return product.itemImages.some(
-            (obj) =>
-                Array.isArray(obj[color]) &&
-                obj[color].some((img) => typeof img === "string" && img.trim() !== "")
-        );
-    };
-
-    // State for selected color and size
-    const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | "">(firstColor);
+    const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | "">("");
     const [selectedSize, setSelectedSize] = useState("");
     const [mainImage, setMainImage] = useState("");
     const [zoomActive, setZoomActive] = useState(false);
     const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
+    const [wishlistAdded, setWishlistAdded] = useState(false);
+    const hasSyncedFromCart = useRef(false);
 
-    const { cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
+    const { cartItems, addToCart, removeFromCart, updateQuantity, updateCartItemAttributes } = useCart();
+    const cartItem = cartItems.find((item) => item.product?.id === product?.id);
+    const quantity = cartItem?.quantity ?? 0;
 
-    // Update main image when selectedColor or product changes
+    // Load product from ID, state, or localStorage
+    useEffect(() => {
+        if (!product && id) {
+            const localProduct = Products.find((p) => p.id === Number(id));
+            if (localProduct) {
+                setProduct(localProduct);
+                return;
+            }
+
+            const saved = localStorage.getItem("products");
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const fromStorage = parsed.find((p: Product) => p.id === Number(id));
+                    if (fromStorage) setProduct(fromStorage);
+                } catch (e) {
+                    console.error("Failed to parse localStorage:", e);
+                }
+            }
+        }
+    }, [id, product]);
+
+    // Get available colors
+    const colors = Object.keys(product?.itemImages?.[0] || {}) as (keyof ProductImageVariants)[];
+
+    // Sync main image when product or color changes
     useEffect(() => {
         if (selectedColor && hasImages(selectedColor)) {
-            setMainImage(product.itemImages[0][selectedColor][0]);
+            setMainImage(product?.itemImages[0][selectedColor]?.[0] || "/placeholder-image.png");
         } else {
             setMainImage("/placeholder-image.png");
         }
     }, [selectedColor, product]);
 
-    // Color selection handler
+    // Sync selection from cart once
+    useEffect(() => {
+        if (!hasSyncedFromCart.current && cartItem) {
+            if (cartItem.product?.selectedColor) {
+                setSelectedColor(cartItem.product?.selectedColor);
+            }
+            if (cartItem.product?.selectedSize) {
+                setSelectedSize(cartItem.product?.selectedSize);
+            }
+            hasSyncedFromCart.current = true;
+        }
+    }, [cartItem]);
+
+    // Update cart attributes when selection changes
+    useEffect(() => {
+        if (cartItem && product?.id) {
+            updateCartItemAttributes(product.id, {
+                selectedColor,
+                selectedSize,
+            });
+        }
+    }, [selectedColor, selectedSize]);
+
+    // Check if product has valid images for a color
+    const hasImages = (color: keyof ProductImageVariants): boolean => {
+        return (
+            product?.itemImages?.some(
+                (variant) =>
+                    Array.isArray(variant[color]) &&
+                    variant[color].some((img) => typeof img === "string" && img.trim() !== "")
+            ) ?? false
+        );
+    };
+
+    // Color handler
     const handleColorSelect = (color: keyof ProductImageVariants) => {
         if (!hasImages(color)) return;
         setSelectedColor(color);
     };
 
-    // Thumbnail click changes main image
-    const handleThumbnailClick = (imgSrc: string) => {
-        setMainImage(imgSrc);
-    };
+    const thumbnails =
+        selectedColor && product?.itemImages[0][selectedColor]
+            ? product.itemImages[0][selectedColor].filter(Boolean).slice(0, 3)
+            : [];
 
-    // Zoom handlers for mouse & touch
-
+    // Zoom handlers
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!zoomActive) return;
-
         const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
         const x = ((e.clientX - left) / width) * 100;
         const y = ((e.clientY - top) / height) * 100;
-
-        setZoomStyle({
-            transformOrigin: `${x}% ${y}%`,
-            transform: "scale(2)",
-        });
+        setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
     };
 
     const handleMouseLeave = () => {
-        if (!zoomActive) return;
-        setZoomStyle({ transform: "scale(1)" });
+        if (zoomActive) setZoomStyle({ transform: "scale(1)" });
     };
 
-    const handleTouchStart = () => {
-        setZoomActive(true);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-        if (!zoomActive) return;
-
-        e.preventDefault();
-
-        const touch = e.touches[0];
-        const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-        const x = ((touch.clientX - left) / width) * 100;
-        const y = ((touch.clientY - top) / height) * 100;
-
-        setZoomStyle({
-            transformOrigin: `${x}% ${y}%`,
-            transform: "scale(2)",
-        });
-    };
-
+    const handleTouchStart = () => setZoomActive(true);
     const handleTouchEnd = () => {
         setZoomActive(false);
         setZoomStyle({ transform: "scale(1)" });
     };
 
-    // Thumbnails limited to 3 images of selected color
-    const thumbnails =
-        selectedColor && product.itemImages[0][selectedColor]?.some((img) => img.trim() !== "")
-            ? product.itemImages[0][selectedColor].slice(0, 3)
-            : [];
-
-    // Cart handlers
-    const cartItem = cartItems.find((item) => item.product.id === product.id);
-    const quantity = cartItem?.quantity ?? 0;
-
-    const handleIncrement = () => updateQuantity(product.id, quantity + 1);
-    const handleDecrement = () => {
-        if (quantity > 1) updateQuantity(product.id, quantity - 1);
-        else removeFromCart(product.id);
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (!zoomActive) return;
+        const touch = e.touches[0];
+        const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+        const x = ((touch.clientX - left) / width) * 100;
+        const y = ((touch.clientY - top) / height) * 100;
+        setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
     };
 
-    // Add to cart with size validation and toast
+
+    // Thumbnail click changes main image
+    const handleThumbnailClick = (imgSrc: string) => {
+        setMainImage(imgSrc);
+    };
+    
+    // Cart Actions
+    const handleIncrement = () => product?.id && updateQuantity(product.id, quantity + 1);
+    const handleDecrement = () => {
+        if (!product?.id) return;
+        quantity > 1 ? updateQuantity(product.id, quantity - 1) : removeFromCart(product.id);
+    };
+
     const handleAddToCart = () => {
-        if (!selectedSize) {
-            toast.error("Please select a size before adding to cart.");
-            return;
-        }
-        if (!selectedColor) {
-            toast.error("Please select a color before adding to cart.");
-            return;
-        }
+        if (!selectedColor) return toast.error("Please select a color.");
+        if (!selectedSize) return toast.error("Please select a size.");
 
-        // Create updated product with selected size and color
-        const updatedProduct: Product = {
-            ...product,
-            selectedSize,
-            selectedColor,
-        };
-
-        toast.success(`Added to cart: ${product.name}, Color: ${selectedColor}, Size: ${selectedSize}`);
+        const updatedProduct: Product = { ...product!, selectedColor, selectedSize };
+        toast.success(`Added to cart: ${product?.name}, Color: ${selectedColor}, Size: ${selectedSize}`);
         addToCart(updatedProduct);
     };
 
-    // Wishlist toggle
-    const [wishlistAdded, setWishlistAdded] = useState(false);
-
     const handleAddToWishlist = () => {
         setWishlistAdded((prev) => {
-            if (!prev) {
-                toast.success(`${product.name} added to your wishlist!`);
-            } else {
-                toast.info(`${product.name} removed from your wishlist.`);
-            }
+            toast[prev ? "info" : "success"](
+                `${product?.name} ${prev ? "removed from" : "added to"} your wishlist!`
+            );
             return !prev;
         });
     };
 
-    // Share product using Web Share API or fallback to clipboard
     const handleShare = async () => {
         const shareData = {
-            title: product.name,
-            text: product.description,
+            title: product?.name,
+            text: product?.description,
             url: window.location.href,
         };
 
-        if (navigator.share) {
-            try {
+        try {
+            if (navigator.share) {
                 await navigator.share(shareData);
                 toast.success("Shared successfully!");
-            } catch (err) {
-                console.error("Share API error:", err);
-                toast.error("Sharing canceled or failed");
-            }
-        } else {
-            try {
+            } else {
                 await navigator.clipboard.writeText(window.location.href);
                 toast.success("Product link copied to clipboard!");
-            } catch (err) {
-                console.error("Clipboard write error:", err);
-                toast.error("Failed to copy product link.");
             }
+        } catch (err) {
+            console.error("Share error:", err);
+            toast.error("Sharing failed or canceled.");
         }
     };
+
+    if (!product) {
+        return <p>Product not found. Try reloading from the product list.</p>;
+    }
+
 
     return (
         <div
@@ -265,19 +242,19 @@ export default function ProductDetails() {
             {/* Product Info Section */}
             <div className="flex flex-col max-md:gap-10 gap-8 flex-1 md:justify-between">
                 <div>
-                    <h2 className="md:text-2xl font-semibold text-xl">{product.name}</h2>
-                    <p className="text-gray-500 italic line-clamp-2">{product.description}</p>
+                    <h2 className="md:text-2xl font-semibold text-xl">{product?.name}</h2>
+                    <p className="text-gray-500 italic line-clamp-2">{product?.description}</p>
                     <div className="font-semibold flex gap-4 text-sm">
-                        <p>{product.sales} Sold</p>
-                        <StarRating rating={product.rating} />
-                        <p>{product.review.length} Reviews</p>
+                        <p>{product?.sales} Sold</p>
+                        <StarRating rating={product?.rating} />
+                        <p>{product?.review.length} Reviews</p>
                     </div>
                 </div>
 
                 <div>
-                    <h1 className="text-2xl font-bold">${product.price}</h1>
-                    {product.discount !== 0 && (
-                        <p className="text-green-500 font-semibold text-sm">{product.discount}% off</p>
+                    <h1 className="text-2xl font-bold">${product?.price}</h1>
+                    {product?.discount !== 0 && (
+                        <p className="text-green-500 font-semibold text-sm">{product?.discount}% off</p>
                     )}
                 </div>
 
@@ -306,7 +283,7 @@ export default function ProductDetails() {
                 <div>
                     <h4 className="text-xl font-semibold">Select Size</h4>
                     <div className="flex gap-3 flex-wrap">
-                        {product.sizes.map((size, index) => (
+                        {product?.sizes.map((size, index) => (
                             <button
                                 key={index}
                                 onClick={() => setSelectedSize(size)}

@@ -7,13 +7,13 @@ import ProductDetails from "./pages/ProductDetails";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CartPage from "./pages/Cart";
-// import CartPage from "./pages/cart";
-// import CartPage from "./pages/Cart";
+import Navbar from "../components/Navbar"
 
 function App() {
   return (
     <>
       <CartProvider>
+        <Navbar/>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/cart" element={<CartPage />} />

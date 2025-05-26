@@ -19,7 +19,7 @@ export type Product = {
   itemImages: ProductImageVariants[];
   sizes: string[];
   selectedSize?: string;
-  selectedColor?: keyof ProductImageVariants;
+  selectedColor?: keyof ProductImageVariants | "";
 };
 
 export type CartItem = {

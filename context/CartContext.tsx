@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { CartItem, Product } from '../types/ProductType';
 
@@ -8,6 +9,7 @@ type CartContextType = {
   addToCart: (product: Product) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
+  updateCartItemAttributes: (productId: number, attributes: Partial<Product>) => void;
   clearCart: () => void;
   addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: number) => void;
@@ -72,6 +74,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateCartItemAttributes = (productId: number, attributes: Partial<Product>) => {
+    setCartItems(prev =>
+      prev.map(item =>
+        item.product.id === productId
+          ? {
+              ...item,
+              product: {
+                ...item.product,
+                ...attributes,
+              },
+            }
+          : item
+      )
+    );
+  };
+
   const clearCart = () => setCartItems([]);
 
   const addToWishlist = (product: Product) => {
@@ -100,6 +118,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateCartItemAttributes,
         clearCart,
         addToWishlist,
         removeFromWishlist,
