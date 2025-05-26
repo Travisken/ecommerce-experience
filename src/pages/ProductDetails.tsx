@@ -6,11 +6,35 @@ import StarRating from "../../components/starRating";
 import { Heart, Minus, Plus, Search, Share, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCart } from "../../context/CartContext";
+import Products from "../../lib/data"
 
 export default function ProductDetails() {
-    const { state } = useLocation();
     const { id } = useParams();
-    const product: Product | undefined = state?.product;
+    const { state } = useLocation();
+    const [product, setProduct] = useState<Product | undefined>(state?.product);
+
+
+
+    useEffect(() => {
+    if (!product && id) {
+      // Try getting product from local array
+      const found = Products.find((p) => p.id === Number(id));
+
+      if (found) {
+        setProduct(found);
+      } else {
+        // Fallback: try loading from localStorage (if stored previously)
+        const savedProducts = localStorage.getItem("products");
+        if (savedProducts) {
+          const parsed = JSON.parse(savedProducts);
+          const foundInStorage = parsed.find((p: Product) => p.id === Number(id));
+
+          setProduct(foundInStorage);
+        }
+      }
+    }
+  }, [id, product]);
+
 
     // Show fallback if no product found
     if (!product) {
