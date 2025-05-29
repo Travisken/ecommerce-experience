@@ -13,9 +13,9 @@ export default function ProductDetails() {
     const { id } = useParams();
     const { state } = useLocation();
     const [product, setProduct] = useState<Product | undefined>(state?.product);
-    const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | "">("");
+    const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | null>(null);
     const [selectedSize, setSelectedSize] = useState("");
-    const [mainImage, setMainImage] = useState("");
+    const [mainImage, setMainImage] = useState("/placeholder-image.png");
     const [zoomActive, setZoomActive] = useState(false);
     const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
     const [wishlistAdded, setWishlistAdded] = useState(false);
@@ -48,39 +48,7 @@ export default function ProductDetails() {
     }, [id, product]);
 
     // Get available colors
-    const colors = Object.keys(product?.itemImages?.[0] || {}) as (keyof ProductImageVariants)[];
-
-    // Sync main image when product or color changes
-    useEffect(() => {
-        if (selectedColor && hasImages(selectedColor)) {
-            setMainImage(product?.itemImages[0][selectedColor]?.[0] || "/placeholder-image.png");
-        } else {
-            setMainImage("/placeholder-image.png");
-        }
-    }, [selectedColor, product]);
-
-    // Sync selection from cart once
-    useEffect(() => {
-        if (!hasSyncedFromCart.current && cartItem) {
-            if (cartItem.product?.selectedColor) {
-                setSelectedColor(cartItem.product?.selectedColor);
-            }
-            if (cartItem.product?.selectedSize) {
-                setSelectedSize(cartItem.product?.selectedSize);
-            }
-            hasSyncedFromCart.current = true;
-        }
-    }, [cartItem]);
-
-    // Update cart attributes when selection changes
-    useEffect(() => {
-        if (cartItem && product?.id) {
-            updateCartItemAttributes(product.id, {
-                selectedColor,
-                selectedSize,
-            });
-        }
-    }, [selectedColor, selectedSize]);
+    const colors = (product?.itemImages?.[0] ? Object.keys(product.itemImages[0]) : []) as (keyof ProductImageVariants)[];
 
     // Check if product has valid images for a color
     const hasImages = (color: keyof ProductImageVariants): boolean => {
@@ -93,16 +61,82 @@ export default function ProductDetails() {
         );
     };
 
+    // Find first valid color with images
+    const getFirstValidColor = (): keyof ProductImageVariants | null => {
+        if (!product?.itemImages?.[0]) return null;
+        const availableColors = Object.keys(product.itemImages[0]) as (keyof ProductImageVariants)[];
+        return availableColors.find(color => hasImages(color)) || null;
+    };
+
+    // Sync main image when product or color changes
+    useEffect(() => {
+        if (!product?.itemImages?.[0]) {
+            setMainImage("/placeholder-image.png");
+            return;
+        }
+
+        const colorToUse = selectedColor || getFirstValidColor();
+        if (!colorToUse) {
+            setMainImage("/placeholder-image.png");
+            return;
+        }
+
+        const images = product.itemImages[0][colorToUse]?.filter(Boolean);
+        if (images?.length) {
+            setMainImage(images[0]);
+        } else {
+            setMainImage("/placeholder-image.png");
+        }
+    }, [product, selectedColor]);
+
+    // Sync selection from cart once
+    useEffect(() => {
+        if (!hasSyncedFromCart.current && cartItem) {
+            if (cartItem.product?.selectedColor && hasImages(cartItem.product.selectedColor)) {
+                setSelectedColor(cartItem.product.selectedColor);
+            }
+            if (cartItem.product?.selectedSize) {
+                setSelectedSize(cartItem.product.selectedSize);
+            }
+            hasSyncedFromCart.current = true;
+        }
+    }, [cartItem]);
+
+    // Update cart attributes when selection changes
+    useEffect(() => {
+        if (cartItem && product?.id) {
+            updateCartItemAttributes(product.id, {
+                selectedColor: selectedColor || undefined,
+                selectedSize,
+            });
+        }
+    }, [selectedColor, selectedSize]);
+
     // Color handler
     const handleColorSelect = (color: keyof ProductImageVariants) => {
         if (!hasImages(color)) return;
         setSelectedColor(color);
     };
 
+    // Replace the thumbnail generation logic with:
+    const effectiveColor = selectedColor || getFirstValidColor();
     const thumbnails =
-        selectedColor && product?.itemImages[0][selectedColor]
-            ? product.itemImages[0][selectedColor].filter(Boolean).slice(0, 3)
+        effectiveColor && product?.itemImages[0][effectiveColor]
+            ? product.itemImages[0][effectiveColor].filter(Boolean).slice(0, 3)
             : [];
+
+    // Update the initial state to:
+    // const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | null>(null);
+
+    // Add this effect to set initial color when product loads:
+    useEffect(() => {
+        if (product?.itemImages?.[0]) {
+            const firstColor = getFirstValidColor();
+            if (firstColor && !selectedColor) {
+                setSelectedColor(firstColor);
+            }
+        }
+    }, [product]);
 
     // Zoom handlers
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -132,12 +166,11 @@ export default function ProductDetails() {
         setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2)" });
     };
 
-
     // Thumbnail click changes main image
     const handleThumbnailClick = (imgSrc: string) => {
         setMainImage(imgSrc);
     };
-    
+
     // Cart Actions
     const handleIncrement = () => product?.id && updateQuantity(product.id, quantity + 1);
     const handleDecrement = () => {
@@ -188,6 +221,7 @@ export default function ProductDetails() {
         return <p>Product not found. Try reloading from the product list.</p>;
     }
 
+    const firstValidColor = getFirstValidColor();
 
     return (
         <div
@@ -208,6 +242,9 @@ export default function ProductDetails() {
                                 src={imgSrc}
                                 alt={`Thumbnail ${index + 1}`}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "/placeholder-image.png";
+                                }}
                             />
                         </div>
                     ))}
@@ -228,39 +265,42 @@ export default function ProductDetails() {
                         alt="Main Product"
                         className="w-full h-full object-cover transition-transform duration-200"
                         style={zoomActive ? zoomStyle : {}}
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder-image.png";
+                        }}
                     />
-                    <div
+                    <button
                         className="bg-white p-3 rounded-xl absolute bottom-4 right-4 cursor-pointer"
                         onClick={() => setZoomActive((prev) => !prev)}
-                        aria-label="Toggle zoom"
+                        aria-label={zoomActive ? "Zoom out" : "Zoom in"}
                     >
                         <Search />
-                    </div>
+                    </button>
                 </div>
             </div>
 
             {/* Product Info Section */}
             <div className="flex flex-col max-md:gap-10 gap-8 flex-1 md:justify-between">
                 <div>
-                    <h2 className="md:text-2xl font-semibold text-xl">{product?.name}</h2>
-                    <p className="text-gray-500 italic line-clamp-2">{product?.description}</p>
+                    <h1 className="md:text-2xl font-semibold text-xl">{product.name}</h1>
+                    <p className="text-gray-500 italic line-clamp-2">{product.description}</p>
                     <div className="font-semibold flex gap-4 text-sm">
-                        <p>{product?.sales} Sold</p>
-                        <StarRating rating={product?.rating} />
-                        <p>{product?.review.length} Reviews</p>
+                        <p>{product.sales} Sold</p>
+                        <StarRating rating={product.rating} />
+                        <p>{product.review.length} Reviews</p>
                     </div>
                 </div>
 
                 <div>
-                    <h1 className="text-2xl font-bold">${product?.price}</h1>
-                    {product?.discount !== 0 && (
-                        <p className="text-green-500 font-semibold text-sm">{product?.discount}% off</p>
+                    <h2 className="text-2xl font-bold">${product.price}</h2>
+                    {product.discount !== 0 && (
+                        <p className="text-green-500 font-semibold text-sm">{product.discount}% off</p>
                     )}
                 </div>
 
                 {/* Color Selector */}
                 <div className="flex flex-col gap-4">
-                    <h4 className="text-xl font-semibold">Select Color</h4>
+                    <h3 className="text-xl font-semibold">Select Color</h3>
                     <div className="flex gap-3">
                         {colors.map((color, index) => {
                             const colorHasImages = hasImages(color);
@@ -269,10 +309,13 @@ export default function ProductDetails() {
                                     key={index}
                                     onClick={() => handleColorSelect(color)}
                                     className={`aspect-square h-16 rounded-xl border-2 ${selectedColor === color ? "border-black" : "border-gray-300"
-                                        } ${!colorHasImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                        } ${!colorHasImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                        } ${color === firstValidColor && !selectedColor ? "ring-2 ring-blue-500" : ""
+                                        }`}
                                     style={{ backgroundColor: color }}
                                     aria-label={`Select color ${color}`}
                                     disabled={!colorHasImages}
+                                    title={!colorHasImages ? "No images available for this color" : color}
                                 />
                             );
                         })}
@@ -281,14 +324,15 @@ export default function ProductDetails() {
 
                 {/* Size Selector */}
                 <div>
-                    <h4 className="text-xl font-semibold">Select Size</h4>
+                    <h3 className="text-xl font-semibold">Select Size</h3>
                     <div className="flex gap-3 flex-wrap">
-                        {product?.sizes.map((size, index) => (
+                        {product.sizes.map((size, index) => (
                             <button
                                 key={index}
                                 onClick={() => setSelectedSize(size)}
                                 className={`w-20 h-12 flex items-center justify-center font-semibold uppercase rounded-xl border-2 ${selectedSize === size ? "border-black" : "border-gray-100"
                                     }`}
+                                aria-label={`Select size ${size}`}
                             >
                                 {size}
                             </button>
@@ -300,34 +344,26 @@ export default function ProductDetails() {
                 <div className="flex flex-col gap-4">
                     {quantity === 0 ? (
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddToCart();
-                            }}
+                            onClick={handleAddToCart}
                             className="flex transition-all duration-300 ease-in-out items-center justify-center gap-4 bg-black/90 text-white font-semibold rounded-xl px-6 py-3"
+                            aria-label="Add to cart"
                         >
                             <ShoppingCart />
                             Add to cart
                         </button>
                     ) : (
-                        <div className="flex items-center gap-3 w-full  justify-between">
+                        <div className="flex items-center gap-3 w-full justify-between">
                             <button
                                 aria-label="Decrease quantity"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDecrement();
-                                }}
+                                onClick={handleDecrement}
                                 className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
                             >
                                 <Minus />
                             </button>
-                            <div>{quantity}</div>
+                            <span aria-live="polite">{quantity}</span>
                             <button
                                 aria-label="Increase quantity"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleIncrement();
-                                }}
+                                onClick={handleIncrement}
                                 className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
                             >
                                 <Plus />
@@ -338,27 +374,17 @@ export default function ProductDetails() {
 
                 {/* Wishlist and Share Buttons */}
                 <div className="w-full flex text-sm">
-                    <div
+                    <button
                         onClick={handleShare}
                         className="border-r flex-1 flex gap-4 items-center py-2 justify-center border-gray-200 cursor-pointer select-none"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleShare();
-                        }}
                         aria-label="Share product"
                     >
                         <Share />
                         Share
-                    </div>
-                    <div
+                    </button>
+                    <button
                         onClick={handleAddToWishlist}
                         className="flex gap-4 items-center py-2 justify-center flex-1 cursor-pointer select-none"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleAddToWishlist();
-                        }}
                         aria-label={wishlistAdded ? "Remove from wishlist" : "Add to wishlist"}
                     >
                         <Heart
@@ -366,7 +392,7 @@ export default function ProductDetails() {
                             strokeWidth={1.5}
                         />
                         {wishlistAdded ? "Remove from Wishlist" : "Add to Wishlist"}
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>
