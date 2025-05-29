@@ -98,7 +98,7 @@ export default function Navbar() {
                 )}
             </div>
 
-            <div className="flex space-x-6 justify-center sm:justify-end">
+            <div className="flex space-x-6 justify-between sm:justify-end">
                 <Link
                     to="/"
                     className="text-gray-700 flex gap-2 items-center  hover:text-[#59546c] font-medium transition-colors"
