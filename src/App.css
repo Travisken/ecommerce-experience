@@ -45,3 +45,12 @@
     bottom: auto !important;
   }
 }
+
+.ireg{
+  border-radius: 100%;
+}
+
+.ireg:hover{
+  transform: scale(1.08);
+  border-radius: 61% 39% 73% 27% / 33% 64% 36% 67% ;
+}

@@ -16,7 +16,6 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
     const navigate = useNavigate();
     const { cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
-
     const [showModal, setShowModal] = useState(false);
     const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -25,6 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         navigate(`/product/${product.id}`, { state: { product } });
     };
 
+    
     const cartItem = cartItems.find((item) => item.product.id === product.id);
     const quantity = cartItem?.quantity || 0;
 
@@ -48,7 +48,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             setSelectedColor(null);
             toast.success("Product added successfully")
         } else {
-            alert("Please select size and color");
+            toast.warn("Please select size and color");
         }
     };
 
@@ -66,7 +66,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         for (const color of Object.keys(images) as Array<keyof ProductImageVariants>) {
             if (images[color] && images[color][0]) return images[color][0];
         }
-        return "/placeholder.jpg";
+        return "/placeholder.jpeg";
     }
 
     const imageMap = product.itemImages[0];
@@ -74,6 +74,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     // Colors from first image variant keys
     const availableColors = Object.keys(imageMap) as (keyof ProductImageVariants)[];
+
 
     return (
         <>

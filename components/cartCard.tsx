@@ -49,7 +49,7 @@ export default function CartCard({ product }: ProductCardProps) {
             if (images[color] && images[color][0]) return images[color][0];
         }
 
-        return "/placeholder.jpg";
+        return "/placeholder.jpeg";
     }
 
 

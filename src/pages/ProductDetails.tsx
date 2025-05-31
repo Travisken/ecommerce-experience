@@ -4,7 +4,8 @@ import { useLocation, useParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import type { Product, ProductImageVariants } from "../../types/ProductType";
 import StarRating from "../../components/starRating";
-import { Heart, Minus, Plus, Search, Share, ShoppingCart } from "lucide-react";
+import { Heart, Minus, Plus, Share, ShoppingCart } from "lucide-react";
+import { FaSearchPlus } from 'react-icons/fa';
 import { toast } from "react-toastify";
 import { useCart } from "../../context/CartContext";
 import Products from "../../lib/data"
@@ -15,12 +16,11 @@ export default function ProductDetails() {
     const [product, setProduct] = useState<Product | undefined>(state?.product);
     const [selectedColor, setSelectedColor] = useState<keyof ProductImageVariants | null>(null);
     const [selectedSize, setSelectedSize] = useState("");
-    const [mainImage, setMainImage] = useState("/placeholder-image.png");
+    const [mainImage, setMainImage] = useState("");
     const [zoomActive, setZoomActive] = useState(false);
     const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({});
     const [wishlistAdded, setWishlistAdded] = useState(false);
     const hasSyncedFromCart = useRef(false);
-
     const { cartItems, addToCart, removeFromCart, updateQuantity, updateCartItemAttributes } = useCart();
     const cartItem = cartItems.find((item) => item.product?.id === product?.id);
     const quantity = cartItem?.quantity ?? 0;
@@ -71,13 +71,13 @@ export default function ProductDetails() {
     // Sync main image when product or color changes
     useEffect(() => {
         if (!product?.itemImages?.[0]) {
-            setMainImage("/placeholder-image.png");
+            setMainImage("/placeholder.jpeg");
             return;
         }
 
         const colorToUse = selectedColor || getFirstValidColor();
         if (!colorToUse) {
-            setMainImage("/placeholder-image.png");
+            setMainImage("/placeholder.jpeg");
             return;
         }
 
@@ -85,7 +85,7 @@ export default function ProductDetails() {
         if (images?.length) {
             setMainImage(images[0]);
         } else {
-            setMainImage("/placeholder-image.png");
+            setMainImage("/placeholder.jpeg");
         }
     }, [product, selectedColor]);
 
@@ -179,8 +179,8 @@ export default function ProductDetails() {
     };
 
     const handleAddToCart = () => {
-        if (!selectedColor) return toast.error("Please select a color.");
-        if (!selectedSize) return toast.error("Please select a size.");
+        if (!selectedColor) return toast.warn("Please select a color.");
+        if (!selectedSize) return toast.warn("Please select a size.");
 
         const updatedProduct: Product = { ...product!, selectedColor, selectedSize };
         toast.success(`Added to cart: ${product?.name}, Color: ${selectedColor}, Size: ${selectedSize}`);
@@ -213,7 +213,7 @@ export default function ProductDetails() {
             }
         } catch (err) {
             console.error("Share error:", err);
-            toast.error("Sharing failed or canceled.");
+            toast.warn("Sharing failed or canceled.");
         }
     };
 
@@ -224,7 +224,9 @@ export default function ProductDetails() {
     const firstValidColor = getFirstValidColor();
 
     return (
-        <div
+      <>
+      <section>
+          <div
             key={id}
             className="md:p-8 p-4 w-full flex max-md:flex-col gap-10 justify-between"
         >
@@ -270,11 +272,11 @@ export default function ProductDetails() {
                         }}
                     />
                     <button
-                        className="bg-white p-3 rounded-xl absolute bottom-4 right-4 cursor-pointer"
+                        className="bg-white p-3 text-xl font-light rounded-xl absolute bottom-4 right-4 cursor-pointer"
                         onClick={() => setZoomActive((prev) => !prev)}
                         aria-label={zoomActive ? "Zoom out" : "Zoom in"}
                     >
-                        <Search />
+                        <FaSearchPlus />
                     </button>
                 </div>
             </div>
@@ -308,15 +310,18 @@ export default function ProductDetails() {
                                 <button
                                     key={index}
                                     onClick={() => handleColorSelect(color)}
-                                    className={`aspect-square h-16 rounded-xl border-2 ${selectedColor === color ? "border-black" : "border-gray-300"
+                                    className={` py-3 px-6 capitalize rounded-xl border-2 ${selectedColor === color ? "border-{color}" : "border-gray-300"
                                         } ${!colorHasImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                                         } ${color === firstValidColor && !selectedColor ? "ring-2 ring-blue-500" : ""
-                                        }`}
-                                    style={{ backgroundColor: color }}
+                                        } ${color === "red" ? " !text-[#7e0938]":""}
+                                         ${color === "blue" ? "!text-[#69a7d0]":""}`}
+                                    style={{ color: color }}
                                     aria-label={`Select color ${color}`}
                                     disabled={!colorHasImages}
                                     title={!colorHasImages ? "No images available for this color" : color}
-                                />
+                                >
+                                    {color}
+                                </button>
                             );
                         })}
                     </div>
@@ -396,5 +401,11 @@ export default function ProductDetails() {
                 </div>
             </div>
         </div>
+
+        <section className="">
+
+        </section>
+      </section>
+      </>
     );
 }

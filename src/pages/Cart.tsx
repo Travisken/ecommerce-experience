@@ -1,9 +1,12 @@
-import { toast } from "react-toastify";
+
+import { useState } from "react";
 import CartCard from "../../components/cartCard";
 import { useCart } from "../../context/CartContext";
+import PaymentStepper from "../../components/paymentStepper"
 
 export default function CartPage() {
     const { cartItems } = useCart();
+    const [isOpen, SetIsOpen] = useState(false)
 
     if (cartItems.length === 0) {
         return <p className="p-4 text-center">Your cart is empty.</p>;
@@ -14,11 +17,16 @@ export default function CartPage() {
         0
     );
 
+    function handleOpen() {
+        console.log(isOpen)
+        SetIsOpen(true)
+    }
+
 
     const handleCheckout = () => {
         // You can add real checkout logic here
-
-        toast.success("Checkout successful!");
+        handleOpen()
+        // toast.success("Checkout successful!");
         // Optionally clear cart:
         // setCartItems([]);
     };
@@ -27,14 +35,16 @@ export default function CartPage() {
     return (
 
         <>
-            <section className="flex gap-10 md:p-10 p-4 max-md:flex-col w-full">
-                <div className="flex md:w-[60%] w-full flex-col overflow-y-scroll gap-4 p-4">
-                    {cartItems.map(({ product }) => (
-                        <CartCard key={product.id} product={product} />
-                    ))}
+            <section className="flex gap-10 md:p-10 p-4 max-md:flex-col h-screen p-4 w-full">
+                <div className="overflow-scroll md:w-[60%] h-screen ">
+                    <div className="flex  w-full flex-col overflow-y-scroll gap-4 p-4">
+                        {cartItems.map(({ product }) => (
+                            <CartCard key={product.id} product={product} />
+                        ))}
+                    </div>
                 </div>
 
-                <div className="bg-gray-200 rounded-xl h-fit flex-1 p-4">
+                <div className="bg-gray-200  rounded-xl h-fit flex-1 p-4">
                     <ul>
                         {cartItems.map((item) => (
                             <li key={item.product.id} className="flex justify-between border-b border-b-gray-200 py-2">
@@ -58,6 +68,14 @@ export default function CartPage() {
                     </button>
                 </div>
             </section >
+
+            {isOpen && (
+                <section className="fixed inset-0 bg-black/30 flex items-center justify-center">
+                    <div className="flex w-[90%] md:w-[40%]">
+                        <PaymentStepper />
+                    </div>
+                </section>
+            )}
 
         </>
 
