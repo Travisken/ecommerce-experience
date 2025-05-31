@@ -80,7 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <>
             <div
                 onClick={handleCardClick}
-                className="flex relative z-0 hover:z-100 flex-col md:group-hover:h-102 h-105 md:h-90 gap-4 cursor-pointer group"
+                className="flex relative flex-1 z-0 hover:z-100 flex-col md:group-hover:h-102 h-105 md:h-90 gap-4 cursor-pointer group"
             >
                 <div className="absolute -z-10 group-hover:z-100 w-full top-0 left-0 md:group-hover:h-102 h-105 md:h-90 duration-300 transition-all ease-in-out overflow-hidden rounded-xl group-hover:shadow-2xl shadow flex flex-col bg-white">
                     <div className="flex w-full h-52 md:h-46 bg-gray-400 rounded-t-xl overflow-hidden transition-all ease-in-out duration-300">

@@ -8,7 +8,8 @@ import { Heart, Minus, Plus, Share, ShoppingCart } from "lucide-react";
 import { FaSearchPlus } from 'react-icons/fa';
 import { toast } from "react-toastify";
 import { useCart } from "../../context/CartContext";
-import Products from "../../lib/data"
+import Products from "../../lib/data";
+import ProductCard from "../../components/ProductCard";
 
 export default function ProductDetails() {
     const { id } = useParams();
@@ -24,6 +25,14 @@ export default function ProductDetails() {
     const { cartItems, addToCart, removeFromCart, updateQuantity, updateCartItemAttributes } = useCart();
     const cartItem = cartItems.find((item) => item.product?.id === product?.id);
     const quantity = cartItem?.quantity ?? 0;
+
+
+
+
+    const relatedProducts = Products
+        .filter(p => p.category === product?.category && p.id !== product?.id)
+        .slice(0, 4);
+
 
     // Load product from ID, state, or localStorage
     useEffect(() => {
@@ -216,6 +225,7 @@ export default function ProductDetails() {
             toast.warn("Sharing failed or canceled.");
         }
     };
+    // const currentProduct = products.find(p => p.id === id)
 
     if (!product) {
         return <p>Product not found. Try reloading from the product list.</p>;
@@ -224,188 +234,199 @@ export default function ProductDetails() {
     const firstValidColor = getFirstValidColor();
 
     return (
-      <>
-      <section>
-          <div
-            key={id}
-            className="md:p-8 p-4 w-full flex max-md:flex-col gap-10 justify-between"
-        >
-            {/* Images Section */}
-            <div className="flex max-md:flex-col-reverse gap-4 md:w-[60%] w-full">
-                <div className="md:w-[15%] w-full max-md:h-[20%] flex md:flex-col flex-row gap-4">
-                    {thumbnails.map((imgSrc: string, index: number) => (
+        <>
+            <section>
+                <div
+                    key={id}
+                    className="md:p-8 p-4 w-full flex max-md:flex-col gap-10 justify-between"
+                >
+                    {/* Images Section */}
+                    <div className="flex max-md:flex-col-reverse gap-4 md:w-[60%] w-full">
+                        <div className="md:w-[15%] w-full max-md:h-[20%] flex md:flex-col flex-row gap-4">
+                            {thumbnails.map((imgSrc: string, index: number) => (
+                                <div
+                                    key={index}
+                                    className={`w-full aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer ${mainImage === imgSrc ? "ring-2 ring-black" : ""
+                                        }`}
+                                    onClick={() => handleThumbnailClick(imgSrc)}
+                                >
+                                    <img
+                                        src={imgSrc}
+                                        alt={`Thumbnail ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "/placeholder-image.png";
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                         <div
-                            key={index}
-                            className={`w-full aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer ${mainImage === imgSrc ? "ring-2 ring-black" : ""
+                            className={`flex-1 bg-gray-200 transition-transform duration-300 ease-in-out rounded-xl min-h-[20rem] md:max-h-[35rem] relative overflow-hidden ${zoomActive ? "cursor-zoom-in" : ""
                                 }`}
-                            onClick={() => handleThumbnailClick(imgSrc)}
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={handleMouseLeave}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onTouchCancel={handleTouchEnd}
+                            style={{ touchAction: "none" }}
                         >
                             <img
-                                src={imgSrc}
-                                alt={`Thumbnail ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                src={mainImage}
+                                alt="Main Product"
+                                className="w-full h-full object-cover transition-transform duration-200"
+                                style={zoomActive ? zoomStyle : {}}
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).src = "/placeholder-image.png";
                                 }}
                             />
+                            <button
+                                className="bg-white p-3 text-xl font-light rounded-xl absolute bottom-4 right-4 cursor-pointer"
+                                onClick={() => setZoomActive((prev) => !prev)}
+                                aria-label={zoomActive ? "Zoom out" : "Zoom in"}
+                            >
+                                <FaSearchPlus />
+                            </button>
                         </div>
-                    ))}
-                </div>
-                <div
-                    className={`flex-1 bg-gray-200 transition-transform duration-300 ease-in-out rounded-xl min-h-[20rem] md:max-h-[35rem] relative overflow-hidden ${zoomActive ? "cursor-zoom-in" : ""
-                        }`}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    onTouchCancel={handleTouchEnd}
-                    style={{ touchAction: "none" }}
-                >
-                    <img
-                        src={mainImage}
-                        alt="Main Product"
-                        className="w-full h-full object-cover transition-transform duration-200"
-                        style={zoomActive ? zoomStyle : {}}
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder-image.png";
-                        }}
-                    />
-                    <button
-                        className="bg-white p-3 text-xl font-light rounded-xl absolute bottom-4 right-4 cursor-pointer"
-                        onClick={() => setZoomActive((prev) => !prev)}
-                        aria-label={zoomActive ? "Zoom out" : "Zoom in"}
-                    >
-                        <FaSearchPlus />
-                    </button>
-                </div>
-            </div>
-
-            {/* Product Info Section */}
-            <div className="flex flex-col max-md:gap-10 gap-8 flex-1 md:justify-between">
-                <div>
-                    <h1 className="md:text-2xl font-semibold text-xl">{product.name}</h1>
-                    <p className="text-gray-500 italic line-clamp-2">{product.description}</p>
-                    <div className="font-semibold flex gap-4 text-sm">
-                        <p>{product.sales} Sold</p>
-                        <StarRating rating={product.rating} />
-                        <p>{product.review.length} Reviews</p>
                     </div>
-                </div>
 
-                <div>
-                    <h2 className="text-2xl font-bold">${product.price}</h2>
-                    {product.discount !== 0 && (
-                        <p className="text-green-500 font-semibold text-sm">{product.discount}% off</p>
-                    )}
-                </div>
+                    {/* Product Info Section */}
+                    <div className="flex flex-col max-md:gap-10 gap-8 flex-1 md:justify-between">
+                        <div>
+                            <h1 className="md:text-2xl font-semibold text-xl">{product.name}</h1>
+                            <p className="text-gray-500 line-clamp-2">{product.description}</p>
+                            <div className="font-semibold flex gap-4 text-sm">
+                                <p>{product.sales} Sold</p>
+                                <StarRating rating={product.rating} />
+                                <p>{product.review.length} Reviews</p>
+                            </div>
+                        </div>
 
-                {/* Color Selector */}
-                <div className="flex flex-col gap-4">
-                    <h3 className="text-xl font-semibold">Select Color</h3>
-                    <div className="flex gap-3">
-                        {colors.map((color, index) => {
-                            const colorHasImages = hasImages(color);
-                            return (
+                        <div>
+                            <h2 className="text-2xl font-bold">${product.price}</h2>
+                            {product.discount !== 0 && (
+                                <p className="text-green-500 font-semibold text-sm">{product.discount}% off</p>
+                            )}
+                        </div>
+
+                        {/* Color Selector */}
+                        <div className="flex flex-col gap-4">
+                            <h3 className="text-xl font-semibold">Select Color</h3>
+                            <div className="flex gap-3">
+                                {colors.map((color, index) => {
+                                    const colorHasImages = hasImages(color);
+                                    return (
+                                        <button
+                                            key={index}
+                                            onClick={() => handleColorSelect(color)}
+                                            className={` py-3 px-6 capitalize rounded-xl border-2 ${selectedColor === color ? "border-{color}" : "border-gray-300"
+                                                } ${!colorHasImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                                } ${color === firstValidColor && !selectedColor ? "ring-2 ring-blue-500" : ""
+                                                } ${color === "red" ? " !text-[#7e0938]" : ""}
+                                         ${color === "blue" ? "!text-[#69a7d0]" : ""}`}
+                                            style={{ color: color }}
+                                            aria-label={`Select color ${color}`}
+                                            disabled={!colorHasImages}
+                                            title={!colorHasImages ? "No images available for this color" : color}
+                                        >
+                                            {color}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Size Selector */}
+                        <div>
+                            <h3 className="text-xl font-semibold">Select Size</h3>
+                            <div className="flex gap-3 flex-wrap">
+                                {product.sizes.map((size, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`w-20 h-12 flex items-center justify-center font-semibold uppercase rounded-xl border-2 ${selectedSize === size ? "border-black" : "border-gray-100"
+                                            }`}
+                                        aria-label={`Select size ${size}`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Add to Cart Button and Quantity Controls */}
+                        <div className="flex flex-col gap-4">
+                            {quantity === 0 ? (
                                 <button
-                                    key={index}
-                                    onClick={() => handleColorSelect(color)}
-                                    className={` py-3 px-6 capitalize rounded-xl border-2 ${selectedColor === color ? "border-{color}" : "border-gray-300"
-                                        } ${!colorHasImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                        } ${color === firstValidColor && !selectedColor ? "ring-2 ring-blue-500" : ""
-                                        } ${color === "red" ? " !text-[#7e0938]":""}
-                                         ${color === "blue" ? "!text-[#69a7d0]":""}`}
-                                    style={{ color: color }}
-                                    aria-label={`Select color ${color}`}
-                                    disabled={!colorHasImages}
-                                    title={!colorHasImages ? "No images available for this color" : color}
+                                    onClick={handleAddToCart}
+                                    className="flex transition-all duration-300 ease-in-out items-center justify-center gap-4 bg-black/90 text-white font-semibold rounded-xl px-6 py-3"
+                                    aria-label="Add to cart"
                                 >
-                                    {color}
+                                    <ShoppingCart />
+                                    Add to cart
                                 </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                            ) : (
+                                <div className="flex items-center gap-3 w-full justify-between">
+                                    <button
+                                        aria-label="Decrease quantity"
+                                        onClick={handleDecrement}
+                                        className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
+                                    >
+                                        <Minus />
+                                    </button>
+                                    <span aria-live="polite">{quantity}</span>
+                                    <button
+                                        aria-label="Increase quantity"
+                                        onClick={handleIncrement}
+                                        className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
+                                    >
+                                        <Plus />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
-                {/* Size Selector */}
-                <div>
-                    <h3 className="text-xl font-semibold">Select Size</h3>
-                    <div className="flex gap-3 flex-wrap">
-                        {product.sizes.map((size, index) => (
+                        {/* Wishlist and Share Buttons */}
+                        <div className="w-full flex text-sm">
                             <button
-                                key={index}
-                                onClick={() => setSelectedSize(size)}
-                                className={`w-20 h-12 flex items-center justify-center font-semibold uppercase rounded-xl border-2 ${selectedSize === size ? "border-black" : "border-gray-100"
-                                    }`}
-                                aria-label={`Select size ${size}`}
+                                onClick={handleShare}
+                                className="border-r flex-1 flex gap-4 items-center py-2 justify-center border-gray-200 cursor-pointer select-none"
+                                aria-label="Share product"
                             >
-                                {size}
+                                <Share />
+                                Share
                             </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Add to Cart Button and Quantity Controls */}
-                <div className="flex flex-col gap-4">
-                    {quantity === 0 ? (
-                        <button
-                            onClick={handleAddToCart}
-                            className="flex transition-all duration-300 ease-in-out items-center justify-center gap-4 bg-black/90 text-white font-semibold rounded-xl px-6 py-3"
-                            aria-label="Add to cart"
-                        >
-                            <ShoppingCart />
-                            Add to cart
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-3 w-full justify-between">
                             <button
-                                aria-label="Decrease quantity"
-                                onClick={handleDecrement}
-                                className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
+                                onClick={handleAddToWishlist}
+                                className="flex gap-4 items-center py-2 justify-center flex-1 cursor-pointer select-none"
+                                aria-label={wishlistAdded ? "Remove from wishlist" : "Add to wishlist"}
                             >
-                                <Minus />
-                            </button>
-                            <span aria-live="polite">{quantity}</span>
-                            <button
-                                aria-label="Increase quantity"
-                                onClick={handleIncrement}
-                                className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-xl"
-                            >
-                                <Plus />
+                                <Heart
+                                    className={wishlistAdded ? "text-red-600 fill-red-600" : ""}
+                                    strokeWidth={1.5}
+                                />
+                                {wishlistAdded ? "Remove from Wishlist" : "Add to Wishlist"}
                             </button>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* Wishlist and Share Buttons */}
-                <div className="w-full flex text-sm">
-                    <button
-                        onClick={handleShare}
-                        className="border-r flex-1 flex gap-4 items-center py-2 justify-center border-gray-200 cursor-pointer select-none"
-                        aria-label="Share product"
-                    >
-                        <Share />
-                        Share
-                    </button>
-                    <button
-                        onClick={handleAddToWishlist}
-                        className="flex gap-4 items-center py-2 justify-center flex-1 cursor-pointer select-none"
-                        aria-label={wishlistAdded ? "Remove from wishlist" : "Add to wishlist"}
-                    >
-                        <Heart
-                            className={wishlistAdded ? "text-red-600 fill-red-600" : ""}
-                            strokeWidth={1.5}
-                        />
-                        {wishlistAdded ? "Remove from Wishlist" : "Add to Wishlist"}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <section className="">
-
-        </section>
-      </section>
-      </>
+                <section className=" w-full p-4 flex flex-col gap-10 h-[50vh] pb-20 mt-10">
+                    <h3 className="text-2xl font-semibold ">
+                        You might also like
+                    </h3>
+                    <div className=" flex  gap-4 h-fit w-full">
+                        {relatedProducts.length > 0 ? (
+                            relatedProducts.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))
+                        ) : (
+                            <p className="text-xl  ">No product found</p>
+                        )}
+                    </div>
+                </section>
+            </section>
+        </>
     );
 }
