@@ -89,7 +89,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
                     <div className="p-2 md:p-4 flex flex-col gap-2">
                         <h4 className="text-xl capitalize font-semibold">{product.name}</h4>
-                        <p className="text-sm text-gray-400 italic">{product.description}</p>
+                        <p className="text-sm text-gray-400">{product.description}</p>
                         <div>
                             <div className="flex justify-between items-center">
                                 <StarRating rating={productRating} />
