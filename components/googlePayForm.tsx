@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 
 interface Props {
   onBack: () => void;
+  onNext: () => void;
 }
 
-export default function GooglePayForm({ onBack }: Props) {
+export default function GooglePayForm({ onBack, onNext }: Props) {
   const buttonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,6 +88,9 @@ export default function GooglePayForm({ onBack }: Props) {
       <div className="flex gap-2">
         <button onClick={onBack} className="text-gray-500">
           ← Back
+        </button>
+        <button onClick={onNext}>
+          i've paid
         </button>
       </div>
     </div>

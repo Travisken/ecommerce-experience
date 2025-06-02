@@ -3,6 +3,7 @@ import BankTransferForm from "./bankTransferForm";
 import CardPaymentForm from "./cardPaymentForm";
 import GooglePayForm from "./googlePayForm";
 import PaymentMethodSelector from "./paymentMethodSelector";
+import ConfirmationPage from "./confirmation"
 
 
 export default function PaymentStepper() {
@@ -24,13 +25,16 @@ export default function PaymentStepper() {
       )}
 
       {step === 2 && method === "google" && (
-        <GooglePayForm onBack={handleBack} />
+        <GooglePayForm onNext={handleNext} onBack={handleBack} />
       )}
       {step === 2 && method === "card" && (
-        <CardPaymentForm onBack={handleBack} />
+        <CardPaymentForm  onNext={handleNext} onBack={handleBack} />
       )}
       {step === 2 && method === "bank" && (
-        <BankTransferForm onBack={handleBack} />
+        <BankTransferForm  onNext={handleNext} onBack={handleBack} />
+      )}
+      {step === 3 && method === "bank" && (
+        <ConfirmationPage onBack={handleBack} />
       )}
     </div>
   );

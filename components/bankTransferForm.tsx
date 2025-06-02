@@ -1,8 +1,9 @@
 interface Props {
   onBack: () => void;
+  onNext: () => void;
 }
 
-export default function BankTransferForm({ onBack }: Props) {
+export default function BankTransferForm({ onBack, onNext }: Props) {
   const accountNumber = "1234567890";
   const bankName = "Example Bank";
 
@@ -23,7 +24,7 @@ export default function BankTransferForm({ onBack }: Props) {
       </div>
       <div className="flex gap-2">
         <button onClick={onBack} className="text-gray-500">← Back</button>
-        <button className="ml-auto bg-green-600 text-white px-4 py-2 rounded-md">I've Paid</button>
+        <button onClick={onNext} className="ml-auto bg-green-600 text-white px-4 py-2 rounded-md">I've Paid</button>
       </div>
     </div>
   );

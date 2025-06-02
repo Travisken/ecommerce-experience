@@ -1,10 +1,12 @@
 import { useForm } from "react-hook-form";
+// import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 interface Props {
   onBack: () => void;
+  onNext: () => void;
 }
 
-// ✅ Define a proper type instead of using `any`
 interface CardFormData {
   cardNumber: string;
   expiry: string;
@@ -12,11 +14,24 @@ interface CardFormData {
   cardName: string;
 }
 
-export default function CardPaymentForm({ onBack }: Props) {
-  const { register, handleSubmit } = useForm<CardFormData>();
+export default function CardPaymentForm({ onBack, onNext }: Props) {
+  const { register, handleSubmit, setValue } = useForm<CardFormData>();
+  const [expiryInput, setExpiryInput] = useState("");
+  // const navigate = useNavigate();
 
   const onSubmit = (data: CardFormData) => {
+    onNext()
     console.log("Card Payment Submitted", data);
+    // navigate("/confirmation"); // ✅ Change this route to your target page
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ""); // Only digits
+    if (value.length > 2) {
+      value = value.slice(0, 2) + "/" + value.slice(2, 4);
+    }
+    setExpiryInput(value);
+    setValue("expiry", value);
   };
 
   return (
@@ -28,16 +43,20 @@ export default function CardPaymentForm({ onBack }: Props) {
         placeholder="Card Number"
         className="border p-2 w-full rounded"
       />
+
       <input
-        {...register("expiry")}
         placeholder="MM/YY"
+        value={expiryInput}
+        onChange={handleExpiryChange}
         className="border p-2 w-full rounded"
       />
+
       <input
         {...register("cvv")}
         placeholder="CVV"
         className="border p-2 w-full rounded"
       />
+
       <input
         {...register("cardName")}
         placeholder="Cardholder Name"
